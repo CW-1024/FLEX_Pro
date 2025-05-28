@@ -32,10 +32,16 @@ $(LIBRARY_NAME)_CFLAGS = -fobjc-arc -include flex_fishhook.h \
 # 添加警告抑制
 $(LIBRARY_NAME)_CCFLAGS = -std=c++11 -Wno-unused-function -Wno-objc-missing-property-synthesis
 $(LIBRARY_NAME)_OBJCFLAGS = -fobjc-arc
-$(LIBRARY_NAME)_LDFLAGS += -Wl,-no_warn_inits
-$(LIBRARY_NAME)_LDFLAGS += -Wl,-no_warn_category_strict
 
-# 兼容性标志，帮助在旧设备上更好工作
+# 链接器 - 移除不兼容
+$(LIBRARY_NAME)_LDFLAGS += -Wl,-no_warn_inits
+# 在 GitHub Actions 环境中不被支持
+# $(LIBRARY_NAME)_LDFLAGS += -Wl,-no_warn_category_strict
+
+# 替代方案：使用更通用的警告抑制标志
+$(LIBRARY_NAME)_CFLAGS += -Wno-objc-protocol-method-implementation
+
+# 兼容性
 $(LIBRARY_NAME)_CFLAGS += -miphoneos-version-min=9.0
 
 # DoKit 增强功能编译标志
