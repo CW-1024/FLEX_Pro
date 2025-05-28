@@ -41,5 +41,5 @@ jobs:
       - name: Upload specific Deb packages
         uses: actions/upload-artifact@v4.6.0
         with:
-          name: DYYY
+          name: FLEX_Pro
           path: ${{ github.workspace }}/packages/*.deb
