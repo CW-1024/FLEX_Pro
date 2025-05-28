@@ -45,11 +45,12 @@ $(LIBRARY_NAME)_CFLAGS += -DFLEX_DOKIT_ENHANCED=1 \
                  -DFLEX_UI_DEBUGGING=1 \
                  -DFLEX_MEMORY_DEBUGGING=1
 
-# 警告抑制
+# 警告抑制标志
 $(LIBRARY_NAME)_CFLAGS += -Wno-duplicate-method-match
 
 # 包含所有源文件 （GitHub Actions 中排除 theos 目录）
-$(LIBRARY_NAME)_FILES = $(shell find . -path "./theos" -prune -o -name "*.m" -o -name "*.mm" | grep -v "theos/")
+# 源文件查找方式，不依赖于 ./theos 目录
+$(LIBRARY_NAME)_FILES = $(wildcard *.m */*.m *.mm */*.mm)
 $(LIBRARY_NAME)_FILES += flex_fishhook.c
 
 include $(THEOS)/makefiles/common.mk
