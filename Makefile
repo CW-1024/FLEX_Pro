@@ -32,7 +32,7 @@ $(LIBRARY_NAME)_CFLAGS = -fobjc-arc -include flex_fishhook.h \
                  -DFLEX_LIVE_OBJECTS_CONTROLLER_IS_VIEW_CONTROLLER=1 \
                  -DFLEX_LIVE_OBJECTS_VIEW_CONTROLLER=FLEXLiveObjectsController \
                  -Wno-unsupported-availability-guard \
-                 -Wno-unused-but-set-variable
+                 -Wno-unused-but-set-variable \
                  -Wno-unguarded-availability-new \
                  -Wno-incompatible-pointer-types \
                  -Wno-deprecated-declarations
@@ -41,8 +41,6 @@ $(LIBRARY_NAME)_CFLAGS = -fobjc-arc -include flex_fishhook.h \
 $(LIBRARY_NAME)_CCFLAGS = -std=c++11 -Wno-unused-function -Wno-objc-missing-property-synthesis
 $(LIBRARY_NAME)_OBJCFLAGS = -fobjc-arc
 $(LIBRARY_NAME)_LDFLAGS += -Wl,-no_warn_inits
-# 在 GitHub Actions 环境中不被支持
-# $(LIBRARY_NAME)_LDFLAGS += -Wl,-no_warn_category_strict
 
 # 警告抑制
 $(LIBRARY_NAME)_CFLAGS += -Wno-objc-protocol-method-implementation
