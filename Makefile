@@ -1,5 +1,3 @@
-# 遇到问题联系中文翻译作者：pxx917144686
-
 # 支持更旧版本的iOS设备(从15.6降到9.0)
 TARGET = iphone:latest:9.0
 
@@ -35,6 +33,9 @@ $(LIBRARY_NAME)_CFLAGS = -fobjc-arc -include flex_fishhook.h \
                  -DFLEX_LIVE_OBJECTS_VIEW_CONTROLLER=FLEXLiveObjectsController \
                  -Wno-unsupported-availability-guard \
                  -Wno-unused-but-set-variable
+                 -Wno-unguarded-availability-new \
+                 -Wno-incompatible-pointer-types \
+                 -Wno-deprecated-declarations
 
 # 添加警告抑制
 $(LIBRARY_NAME)_CCFLAGS = -std=c++11 -Wno-unused-function -Wno-objc-missing-property-synthesis
@@ -43,24 +44,16 @@ $(LIBRARY_NAME)_LDFLAGS += -Wl,-no_warn_inits
 # 在 GitHub Actions 环境中不被支持
 # $(LIBRARY_NAME)_LDFLAGS += -Wl,-no_warn_category_strict
 
-# 通用的警告抑制标志
+# 警告抑制
 $(LIBRARY_NAME)_CFLAGS += -Wno-objc-protocol-method-implementation
 
 # 兼容性
 $(LIBRARY_NAME)_CFLAGS += -miphoneos-version-min=9.0
 
-# DoKit 增强功能编译标志
-$(LIBRARY_NAME)_CFLAGS += -DFLEX_DOKIT_ENHANCED=1 \
-                 -DFLEX_PERFORMANCE_MONITORING=1 \
-                 -DFLEX_NETWORK_DEBUGGING=1 \
-                 -DFLEX_UI_DEBUGGING=1 \
-                 -DFLEX_MEMORY_DEBUGGING=1
-
 # 警告抑制标志
 $(LIBRARY_NAME)_CFLAGS += -Wno-duplicate-method-match
 
 # 包含所有源文件 （GitHub Actions 中排除 theos 目录）
-# 源文件查找方式，不依赖于 ./theos 目录
 $(LIBRARY_NAME)_FILES = $(wildcard *.m */*.m *.mm */*.mm)
 $(LIBRARY_NAME)_FILES += flex_fishhook.c
 
