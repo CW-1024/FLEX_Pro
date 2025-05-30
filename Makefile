@@ -4,16 +4,23 @@
 TARGET = iphone:latest:9.0
 
 # 添加更多架构支持，包括32位设备（移除 arm64e）
-ARCHS = armv7 armv7s arm64
+ARCHS = arm64 armv7 armv7s
 
 # 名称和类型
-LIBRARY_NAME = FLEX
+LIBRARY_NAME = FLEX_Pro
 
 # 配置为动态库
 LIBRARY_TYPE = dynamic
 
-# 设置输出路径
-THEOS_LIBRARY_PATH = /Users/pxx917144686/theos/lib/iphone/rootless
+# 直接输出到当前目录
+export THEOS_PACKAGE_DIR = $(CURDIR)
+
+# Rootless
+export THEOS_PACKAGE_SCHEME = rootless
+THEOS_PACKAGE_INSTALL_PREFIX = /var/jb
+
+# 设置路径
+$(LIBRARY_NAME)_INSTALL_PATH = /Library/MobileSubstrate/DynamicLibraries
 
 # 添加必要的框架和库
 $(LIBRARY_NAME)_FRAMEWORKS = Foundation UIKit CoreGraphics CoreFoundation
@@ -32,13 +39,11 @@ $(LIBRARY_NAME)_CFLAGS = -fobjc-arc -include flex_fishhook.h \
 # 添加警告抑制
 $(LIBRARY_NAME)_CCFLAGS = -std=c++11 -Wno-unused-function -Wno-objc-missing-property-synthesis
 $(LIBRARY_NAME)_OBJCFLAGS = -fobjc-arc
-
-# 链接器 - 移除不兼容
 $(LIBRARY_NAME)_LDFLAGS += -Wl,-no_warn_inits
 # 在 GitHub Actions 环境中不被支持
 # $(LIBRARY_NAME)_LDFLAGS += -Wl,-no_warn_category_strict
 
-# 替代方案：使用更通用的警告抑制标志
+# 通用的警告抑制标志
 $(LIBRARY_NAME)_CFLAGS += -Wno-objc-protocol-method-implementation
 
 # 兼容性

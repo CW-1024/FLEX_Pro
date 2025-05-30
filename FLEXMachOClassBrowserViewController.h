@@ -1,10 +1,11 @@
 #import <UIKit/UIKit.h>
+#import "FLEXTableViewController.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface FLEXMachOClassBrowserViewController : UITableViewController
+@interface FLEXMachOClassBrowserViewController : FLEXTableViewController
 
-@property (nonatomic, copy) NSArray<NSString *> *classNames;
+@property (nonatomic, strong) NSArray<NSString *> *classNames;
 @property (nonatomic, copy) NSString *imagePath;
 
 @end

@@ -1,5 +1,5 @@
 #import "FLEXMemoryAnalyzer+RuntimeBrowser.h"
-#import "FLEXRuntimeClient+RuntimeBrowser.h"  // 添加这行导入
+#import "FLEXRuntimeClient+RuntimeBrowser.h"
 #import "FLEXRuntimeClient.h"
 #import <mach/mach.h>
 #import <malloc/malloc.h>
@@ -18,8 +18,7 @@
     snapshot[@"residentSize"] = @(info.resident_size);
     snapshot[@"virtualSize"] = @(info.virtual_size);
     
-    // 获取内存区域信息
-    snapshot[@"memoryZones"] = [self getMemoryZoneInfo];
+    snapshot[@"memoryZones"] = [self getDetailedMemoryZoneInfo];
     
     // 获取类实例分布
     snapshot[@"instanceDistribution"] = [self getClassInstanceDistribution];
@@ -41,7 +40,7 @@
     return snapshot;
 }
 
-- (NSArray *)getMemoryZoneInfo {
+- (NSArray *)getDetailedMemoryZoneInfo {
     NSMutableArray *zones = [NSMutableArray array];
     
     vm_address_t *zone_addresses = NULL;
@@ -94,50 +93,13 @@
 }
 
 - (NSArray *)findMemoryLeaks {
-    NSMutableArray *leaks = [NSMutableArray array];
+    // 简化的内存泄漏检测逻辑
+    NSMutableArray *potentialLeaks = [NSMutableArray array];
     
-    // 简化的内存泄漏检测
+    // 这里可以实现更复杂的泄漏检测算法
+    // 目前返回空数组作为占位符
     
-    // 检查常见的泄漏模式
-    
-    // 1. 检查循环引用
-    NSArray *suspiciousClasses = @[@"UIViewController", @"UIView", @"NSTimer", @"NSURLSessionTask"];
-    
-    for (NSString *className in suspiciousClasses) {
-        Class cls = NSClassFromString(className);
-        if (cls) {
-            NSUInteger count = [self getInstanceCountForClass:cls];
-            if (count > 100) { // 阈值检测
-                [leaks addObject:@{
-                    @"type": @"过多实例",
-                    @"className": className,
-                    @"count": @(count),
-                    @"severity": @"warning"
-                }];
-            }
-        }
-    }
-    
-    // 2. 检查 NSTimer 是否未失效
-    Class timerClass = NSClassFromString(@"NSTimer");
-    if (timerClass) {
-        // 使用 FLEXRuntimeClient 的扩展方法来获取实例
-        FLEXRuntimeClient *runtime = [FLEXRuntimeClient runtime];
-        NSArray *timers = [runtime getAllInstancesOfClass:timerClass];
-        for (NSTimer *timer in timers) {
-            if ([timer isValid]) {
-                [leaks addObject:@{
-                    @"type": @"未失效的NSTimer",
-                    @"className": @"NSTimer",
-                    @"description": @"可能导致内存泄漏",
-                    @"severity": @"high"
-                }];
-                break; // 只报告一次
-            }
-        }
-    }
-    
-    return leaks;
+    return potentialLeaks;
 }
 
 @end

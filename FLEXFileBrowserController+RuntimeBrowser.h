@@ -2,8 +2,8 @@
 
 @interface FLEXFileBrowserController (RuntimeBrowser)
 
-// 移植文件分析功能
-- (void)analyzeMachOFile:(NSString *)path;
+// ✅ 重命名方法以避免冲突
+- (void)analyzeRuntimeMachOFile:(NSString *)path;  // 原：analyzeMachOFile:
 - (void)analyzePlistFile:(NSString *)path;
 - (void)previewTextFile:(NSString *)path;
 - (void)analyzeFileAtPath:(NSString *)path;

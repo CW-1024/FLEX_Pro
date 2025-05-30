@@ -25,18 +25,6 @@
 #import "FLEXGlobalsSection.h"
 #import "UIBarButtonItem+FLEX.h"
 
-#import "FLEXSystemAnalyzerViewController+RuntimeBrowser.h"
-#import "FLEXMemoryAnalyzerViewController.h"
-#import "FLEXPerformanceMonitorViewController.h"
-
-typedef NS_ENUM(NSUInteger, FLEXExtendedGlobalsRow) {
-    // 从 FLEXGlobalsRowCount + 1 开始，避免重复
-    FLEXGlobalsRowSystemAnalyzer = FLEXGlobalsRowCount + 1,
-    FLEXGlobalsRowMemoryAnalyzer,
-    FLEXGlobalsRowPerformanceMonitor,
-    FLEXExtendedGlobalsRowCount
-};
-
 @interface FLEXGlobalsViewController ()
 // 表视图中仅显示的部分；空部分从此数组中清除。
 @property (nonatomic) NSArray<FLEXGlobalsSection *> *sections;
@@ -52,8 +40,6 @@ typedef NS_ENUM(NSUInteger, FLEXExtendedGlobalsRow) {
 
 + (NSString *)globalsTitleForSection:(FLEXGlobalsSectionKind)section {
     switch (section) {
-        case FLEXGlobalsSectionCustom:
-            return @"自定义添加";
         case FLEXGlobalsSectionProcessAndEvents:
             return @"进程与事件";
         case FLEXGlobalsSectionAppShortcuts:
@@ -111,32 +97,7 @@ typedef NS_ENUM(NSUInteger, FLEXExtendedGlobalsRow) {
             return [FLEXObjectExplorerFactory flex_concreteGlobalsEntry:row];
             
         case FLEXGlobalsRowCount:
-            // 对于 FLEXGlobalsRowCount，返回 nil 或抛出异常
-            return nil;
-            
-        // 由于我们已经修改了枚举定义，需要使用 default 来处理扩展的值
         default:
-            // 处理扩展的枚举值
-            if (row == FLEXGlobalsRowSystemAnalyzer) {
-                return [FLEXGlobalsEntry entryWithNameFuture:^NSString * {
-                    return @"🔍  系统分析器";
-                } viewControllerFuture:^UIViewController * {
-                    return [[FLEXSystemAnalyzerViewController alloc] init];
-                }];
-            } else if (row == FLEXGlobalsRowMemoryAnalyzer) {
-                return [FLEXGlobalsEntry entryWithNameFuture:^NSString * {
-                    return @"💾  内存分析器";
-                } viewControllerFuture:^UIViewController * {
-                    return [[FLEXMemoryAnalyzerViewController alloc] init];
-                }];
-            } else if (row == FLEXGlobalsRowPerformanceMonitor) {
-                return [FLEXGlobalsEntry entryWithNameFuture:^NSString * {
-                    return @"⏱  性能监控";
-                } viewControllerFuture:^UIViewController * {
-                    return [[FLEXPerformanceMonitorViewController alloc] init];
-                }];
-            }
-            
             @throw [NSException
                 exceptionWithName:NSInternalInconsistencyException
                 reason:@"在switch中缺少globals情况" 
@@ -190,7 +151,7 @@ typedef NS_ENUM(NSUInteger, FLEXExtendedGlobalsRow) {
         };
 
         sections = [NSMutableArray array];
-        for (FLEXGlobalsSectionKind i = FLEXGlobalsSectionCustom + 1; i < FLEXGlobalsSectionCount; ++i) {
+        for (FLEXGlobalsSectionKind i = FLEXGlobalsSectionProcessAndEvents; i < FLEXGlobalsSectionCount; ++i) {
             NSString *title = [self globalsTitleForSection:i];
             [sections addObject:[FLEXGlobalsSection title:title rows:rowsBySection[@(i)]]];
         }
@@ -225,15 +186,6 @@ typedef NS_ENUM(NSUInteger, FLEXExtendedGlobalsRow) {
 
 - (NSArray<FLEXGlobalsSection *> *)makeSections {
     NSMutableArray<FLEXGlobalsSection *> *sections = [NSMutableArray array];
-    // 我们有自定义部分要添加吗？
-    if (FLEXManager.sharedManager.userGlobalEntries.count) {
-        NSString *title = [[self class] globalsTitleForSection:FLEXGlobalsSectionCustom];
-        FLEXGlobalsSection *custom = [FLEXGlobalsSection
-            title:title
-            rows:FLEXManager.sharedManager.userGlobalEntries
-        ];
-        [sections addObject:custom];
-    }
 
     [sections addObjectsFromArray:[self.class defaultGlobalSections]];
 

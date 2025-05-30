@@ -11,20 +11,17 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface FLEXManager (DoKitExtensions)
 
-/// 注册所有 DoKit 增强功能
+// DoKit 功能注册
 - (void)registerDoKitEnhancements;
 
-/// 性能监控相关
+// 分类注册方法
 - (void)registerPerformanceMonitoring;
-
-/// 网络调试相关
 - (void)registerNetworkDebugging;
-
-/// UI 调试相关
 - (void)registerUIDebugging;
-
-/// 内存调试相关
 - (void)registerMemoryDebugging;
+- (void)registerAdvancedDebugging;
+- (void)registerCommonTools;
+- (void)registerLookinEnhancements;
 
 @end
 

@@ -12,9 +12,6 @@
 #import "FLEXResources.h"
 #import "FLEXUtility.h"
 
-// 添加常量定义
-static const CGFloat kDragHandleHeight = 10.0;
-
 @interface FLEXExplorerToolbar ()
 
 @property (nonatomic, readwrite) FLEXExplorerToolbarItem *globalsItem;
@@ -22,8 +19,8 @@ static const CGFloat kDragHandleHeight = 10.0;
 @property (nonatomic, readwrite) FLEXExplorerToolbarItem *selectItem;
 @property (nonatomic, readwrite) FLEXExplorerToolbarItem *recentItem;
 @property (nonatomic, readwrite) FLEXExplorerToolbarItem *moveItem;
-@property (nonatomic, readwrite) FLEXExplorerToolbarItem *closeItem;
 @property (nonatomic, readwrite) FLEXExplorerToolbarItem *bugItem;
+@property (nonatomic, readwrite) FLEXExplorerToolbarItem *closeItem;
 @property (nonatomic, readwrite) UIView *dragHandle;
 
 @property (nonatomic) UIImageView *dragHandleImageView;
@@ -42,24 +39,28 @@ static const CGFloat kDragHandleHeight = 10.0;
 - (id)initWithFrame:(CGRect)frame {
     self = [super initWithFrame:frame];
     if (self) {
-        self.backgroundColor = [FLEXColor secondaryBackgroundColorWithAlpha:0.95];
-        self.layer.borderColor = [FLEXColor tertiaryBackgroundColor].CGColor;
-        self.layer.borderWidth = 1.0;
-        
-        self.dragHandle = [UIView new];
-        self.dragHandle.backgroundColor = [FLEXColor tertiaryBackgroundColor];
-        [self addSubview:self.dragHandle];
+        // Background
+        self.backgroundView = [UIView new];
+        self.backgroundView.backgroundColor = [FLEXColor secondaryBackgroundColorWithAlpha:0.95];
+        [self addSubview:self.backgroundView];
 
-        // 初始化现有按钮（保持不变）
-        self.selectItem    = [FLEXExplorerToolbarItem itemWithTitle:@"选择" image:FLEXResources.selectIcon];
-        self.hierarchyItem = [FLEXExplorerToolbarItem itemWithTitle:@"视图" image:FLEXResources.hierarchyIcon];
+        // Drag handle
+        self.dragHandle = [UIView new];
+        self.dragHandle.backgroundColor = UIColor.clearColor;
+        self.dragHandleImageView = [[UIImageView alloc] initWithImage:FLEXResources.dragHandle];
+        self.dragHandleImageView.tintColor = [FLEXColor.iconColor colorWithAlphaComponent:0.666];
+        [self.dragHandle addSubview:self.dragHandleImageView];
+        [self addSubview:self.dragHandle];
+        
+        // Buttons
         self.globalsItem   = [FLEXExplorerToolbarItem itemWithTitle:@"菜单" image:FLEXResources.globalsIcon];
+        self.hierarchyItem = [FLEXExplorerToolbarItem itemWithTitle:@"视图" image:FLEXResources.hierarchyIcon];
+        self.selectItem    = [FLEXExplorerToolbarItem itemWithTitle:@"选择" image:FLEXResources.selectIcon];
         self.recentItem    = [FLEXExplorerToolbarItem itemWithTitle:@"最近" image:FLEXResources.recentIcon];
         self.moveItem      = [FLEXExplorerToolbarItem itemWithTitle:@"移动" image:FLEXResources.moveIcon sibling:self.recentItem];
         self.bugItem       = [FLEXExplorerToolbarItem itemWithTitle:@"调试" image:FLEXResources.bugIcon];
         self.closeItem     = [FLEXExplorerToolbarItem itemWithTitle:@"关闭" image:FLEXResources.closeIcon];
-        
-        
+
         // Selected view box //
         
         self.selectedViewDescriptionContainer = [UIView new];
@@ -81,87 +82,44 @@ static const CGFloat kDragHandleHeight = 10.0;
         [self.selectedViewDescriptionSafeAreaContainer addSubview:self.selectedViewDescriptionLabel];
         
         // toolbarItems
-        self.toolbarItems = @[_globalsItem, _hierarchyItem, _selectItem, _moveItem, _closeItem];
+        self.toolbarItems = @[_selectItem, _hierarchyItem, _recentItem, _bugItem, _globalsItem, _closeItem];
     }
+
     return self;
 }
 
 - (void)layoutSubviews {
     [super layoutSubviews];
-    
-    const CGFloat kPadding = 10.0;
-    const CGFloat kButtonSize = 44.0;
-    const CGFloat kMiddleSpace = 8.0;
-    const CGSize size = self.bounds.size;
-    
-    // 获取safeArea区域
+
+
     CGRect safeArea = [self safeArea];
+    // Drag Handle
+    const CGFloat kToolbarItemHeight = [[self class] toolbarItemHeight];
+    self.dragHandle.frame = CGRectMake(CGRectGetMinX(safeArea), CGRectGetMinY(safeArea), [[self class] dragHandleWidth], kToolbarItemHeight);
+    CGRect dragHandleImageFrame = self.dragHandleImageView.frame;
+    dragHandleImageFrame.origin.x = FLEXFloor((self.dragHandle.frame.size.width - dragHandleImageFrame.size.width) / 2.0);
+    dragHandleImageFrame.origin.y = FLEXFloor((self.dragHandle.frame.size.height - dragHandleImageFrame.size.height) / 2.0);
+    self.dragHandleImageView.frame = dragHandleImageFrame;
     
-    // 拖拽手柄
-    CGFloat dragHandleWidth = size.width * 0.2;
-    self.dragHandle.frame = CGRectMake(
-        size.width / 2.0 - dragHandleWidth / 2.0,
-        0,
-        dragHandleWidth,
-        kDragHandleHeight
-    );
     
-    // 左侧按钮
-    self.selectItem.frame = CGRectMake(
-        kPadding, 
-        kDragHandleHeight + kPadding, 
-        kButtonSize, 
-        kButtonSize
-    );
-    self.hierarchyItem.frame = CGRectMake(
-        CGRectGetMaxX(self.selectItem.frame) + kMiddleSpace, 
-        kDragHandleHeight + kPadding, 
-        kButtonSize, 
-        kButtonSize
-    );
-    
-    // 右侧按钮，从右向左布局
-    self.closeItem.frame = CGRectMake(
-        size.width - kPadding - kButtonSize, 
-        kDragHandleHeight + kPadding, 
-        kButtonSize, 
-        kButtonSize
-    );
-    self.globalsItem.frame = CGRectMake(
-        CGRectGetMinX(self.closeItem.frame) - kButtonSize - kMiddleSpace, 
-        kDragHandleHeight + kPadding, 
-        kButtonSize, 
-        kButtonSize
-    );
-    
-    // Bug按钮 - 放在globalsItem左侧
-    self.bugItem.frame = CGRectMake(
-        CGRectGetMinX(self.globalsItem.frame) - kButtonSize - kMiddleSpace, 
-        kDragHandleHeight + kPadding, 
-        kButtonSize, 
-        kButtonSize
-    );
-    
-    // 调整其他按钮位置
-    self.moveItem.frame = CGRectMake(
-        CGRectGetMinX(self.bugItem.frame) - kButtonSize - kMiddleSpace, 
-        kDragHandleHeight + kPadding, 
-        kButtonSize, 
-        kButtonSize
-    );
-    self.recentItem.frame = CGRectMake(
-        CGRectGetMinX(self.moveItem.frame) - kButtonSize - kMiddleSpace, 
-        kDragHandleHeight + kPadding, 
-        kButtonSize, 
-        kButtonSize
-    );
-    
-    // 确保Bug按钮被添加到视图中
-    if (self.bugItem.superview == nil) {
-        [self addSubview:self.bugItem];
+    // Toolbar Items
+    CGFloat originX = CGRectGetMaxX(self.dragHandle.frame);
+    CGFloat originY = CGRectGetMinY(safeArea);
+    CGFloat height = kToolbarItemHeight;
+    CGFloat width = FLEXFloor((CGRectGetWidth(safeArea) - CGRectGetWidth(self.dragHandle.frame)) / self.toolbarItems.count);
+    for (FLEXExplorerToolbarItem *toolbarItem in self.toolbarItems) {
+        toolbarItem.currentItem.frame = CGRectMake(originX, originY, width, height);
+        originX = CGRectGetMaxX(toolbarItem.currentItem.frame);
     }
     
-    // 所选视图描述区域的布局
+    // Make sure the last toolbar item goes to the edge to account for any accumulated rounding effects.
+    UIView *lastToolbarItem = self.toolbarItems.lastObject.currentItem;
+    CGRect lastToolbarItemFrame = lastToolbarItem.frame;
+    lastToolbarItemFrame.size.width = CGRectGetMaxX(safeArea) - lastToolbarItemFrame.origin.x;
+    lastToolbarItem.frame = lastToolbarItemFrame;
+
+    self.backgroundView.frame = CGRectMake(0, 0, CGRectGetWidth(self.bounds), kToolbarItemHeight);
+    
     const CGFloat kSelectedViewColorDiameter = [[self class] selectedViewColorIndicatorDiameter];
     const CGFloat kDescriptionLabelHeight = [[self class] descriptionLabelHeight];
     const CGFloat kHorizontalPadding = [[self class] horizontalPadding];
@@ -214,9 +172,9 @@ static const CGFloat kDragHandleHeight = 10.0;
         [item.currentItem removeFromSuperview];
     }
     
-    // Trim to 5 items if necessary
-    if (toolbarItems.count > 5) {
-        toolbarItems = [toolbarItems subarrayWithRange:NSMakeRange(0, 5)];
+    // 将限制从5修改为6
+    if (toolbarItems.count > 6) {
+        toolbarItems = [toolbarItems subarrayWithRange:NSMakeRange(0, 6)];
     }
 
     for (FLEXExplorerToolbarItem *item in toolbarItems) {

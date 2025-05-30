@@ -3,11 +3,13 @@
 #import "FLEXObjectExplorerFactory.h"
 #import "FLEXMachOClassBrowserViewController.h"
 #import "FLEXWebViewController.h"
+#import "FLEXAlert.h"
 #import <dlfcn.h>
+#import <objc/runtime.h>
 
 @implementation FLEXFileBrowserController (RuntimeBrowser)
 
-- (void)analyzeMachOFile:(NSString *)path {
+- (void)analyzeRuntimeMachOFile:(NSString *)path {
     const char *imagePath = path.UTF8String;
     void *handle = dlopen(imagePath, RTLD_LAZY | RTLD_NOLOAD);
     
@@ -25,75 +27,105 @@
         free(classNamesC);
         dlclose(handle);
         
-        // 使用 FLEXMachOClassBrowserViewController 显示类列表
-        FLEXMachOClassBrowserViewController *tableVC = [[FLEXMachOClassBrowserViewController alloc] init];
-        tableVC.title = [NSString stringWithFormat:@"%@ 中的类", [path lastPathComponent]];
-        tableVC.classNames = [classNames sortedArrayUsingSelector:@selector(compare:)];
-        tableVC.imagePath = path;
-        [self.navigationController pushViewController:tableVC animated:YES];
-    } else {
-        UIAlertController *alert = [UIAlertController
-                                   alertControllerWithTitle:@"无法加载"
-                                   message:@"无法加载动态库或framework"
-                                   preferredStyle:UIAlertControllerStyleAlert];
+        FLEXMachOClassBrowserViewController *classBrowser = [[FLEXMachOClassBrowserViewController alloc] init];
+        classBrowser.classNames = classNames;
+        classBrowser.title = [NSString stringWithFormat:@"Classes in %@", path.lastPathComponent];
+        [self.navigationController pushViewController:classBrowser animated:YES];
         
-        [alert addAction:[UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDefault handler:nil]];
-        [self presentViewController:alert animated:YES completion:nil];
+    } else {
+        [FLEXAlert makeAlert:^(FLEXAlert *make) {
+            make.title(@"分析失败");
+            make.message([NSString stringWithFormat:@"无法加载Mach-O文件: %@", path]);
+            make.button(@"确定").handler(^(NSArray<NSString *> *strings) {
+                // 空的 handler 实现
+            });
+        } showFrom:self];
     }
 }
 
 - (void)analyzePlistFile:(NSString *)path {
-    NSDictionary *plistContent = [NSDictionary dictionaryWithContentsOfFile:path];
-    if (plistContent) {
-        UIViewController *explorerVC = [FLEXObjectExplorerFactory explorerViewControllerForObject:plistContent];
-        explorerVC.title = [NSString stringWithFormat:@"%@ 内容", [path lastPathComponent]];
-        [self.navigationController pushViewController:explorerVC animated:YES];
-    } else {
-        UIAlertController *alert = [UIAlertController
-                                   alertControllerWithTitle:@"无法读取"
-                                   message:@"无法读取 plist 文件内容"
-                                   preferredStyle:UIAlertControllerStyleAlert];
-        
-        [alert addAction:[UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDefault handler:nil]];
-        [self presentViewController:alert animated:YES completion:nil];
+    NSError *error;
+    NSData *plistData = [NSData dataWithContentsOfFile:path];
+    
+    if (!plistData) {
+        [FLEXAlert makeAlert:^(FLEXAlert *make) {
+            make.title(@"错误");
+            make.message(@"无法读取文件");
+            make.button(@"确定").handler(^(NSArray<NSString *> *strings) {
+                // 空的 handler 实现
+            });
+        } showFrom:self];
+        return;
     }
+    
+    id plistObject = [NSPropertyListSerialization propertyListWithData:plistData
+                                                               options:NSPropertyListImmutable
+                                                                format:NULL
+                                                                 error:&error];
+    
+    if (error) {
+        [FLEXAlert makeAlert:^(FLEXAlert *make) {
+            make.title(@"解析错误");
+            make.message(error.localizedDescription);
+            make.button(@"确定").handler(^(NSArray<NSString *> *strings) {
+                // 空的 handler 实现
+            });
+        } showFrom:self];
+        return;
+    }
+    
+    // 使用对象浏览器显示plist内容
+    UIViewController *objectExplorer = [FLEXObjectExplorerFactory explorerViewControllerForObject:plistObject];
+    objectExplorer.title = path.lastPathComponent;
+    [self.navigationController pushViewController:objectExplorer animated:YES];
 }
 
 - (void)previewTextFile:(NSString *)path {
-    NSString *content = [NSString stringWithContentsOfFile:path encoding:NSUTF8StringEncoding error:nil];
-    if (content) {
-        FLEXWebViewController *webVC = [[FLEXWebViewController alloc] initWithText:content];
-        webVC.title = [path lastPathComponent];
-        [self.navigationController pushViewController:webVC animated:YES];
-    } else {
-        UIAlertController *alert = [UIAlertController
-                                   alertControllerWithTitle:@"无法读取"
-                                   message:@"无法读取文本文件内容"
-                                   preferredStyle:UIAlertControllerStyleAlert];
-        
-        [alert addAction:[UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDefault handler:nil]];
-        [self presentViewController:alert animated:YES completion:nil];
+    NSError *error;
+    NSString *content = [NSString stringWithContentsOfFile:path 
+                                                   encoding:NSUTF8StringEncoding 
+                                                      error:&error];
+    
+    if (error) {
+        content = [NSString stringWithContentsOfFile:path 
+                                            encoding:NSASCIIStringEncoding 
+                                               error:&error];
     }
+    
+    if (error) {
+        [FLEXAlert makeAlert:^(FLEXAlert *make) {
+            make.title(@"读取错误");
+            make.message(error.localizedDescription);
+            make.button(@"确定").handler(^(NSArray<NSString *> *strings) {
+                // 空的 handler 实现
+            });
+        } showFrom:self];
+        return;
+    }
+    
+    // 使用Web视图显示文本内容
+    FLEXWebViewController *webViewController = [[FLEXWebViewController alloc] initWithText:content];
+    webViewController.title = path.lastPathComponent;
+    [self.navigationController pushViewController:webViewController animated:YES];
 }
 
 - (void)analyzeFileAtPath:(NSString *)path {
-    NSString *extension = path.pathExtension.lowercaseString;
+    NSString *extension = [path.pathExtension lowercaseString];
     
     if ([extension isEqualToString:@"dylib"] || [extension isEqualToString:@"framework"]) {
-        [self analyzeMachOFile:path];
+        [self analyzeRuntimeMachOFile:path];
     } else if ([extension isEqualToString:@"plist"]) {
         [self analyzePlistFile:path];
-    } else if ([@[@"h", @"m", @"mm", @"cpp", @"c", @"swift"] containsObject:extension]) {
+    } else if ([@[@"txt", @"log", @"json", @"xml", @"h", @"m", @"mm", @"c", @"cpp"] containsObject:extension]) {
         [self previewTextFile:path];
     } else {
-        // 对于其他文件类型，显示一个提示
-        UIAlertController *alert = [UIAlertController
-                                   alertControllerWithTitle:@"文件类型"
-                                   message:[NSString stringWithFormat:@"不支持分析 %@ 类型的文件", extension]
-                                   preferredStyle:UIAlertControllerStyleAlert];
-        
-        [alert addAction:[UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDefault handler:nil]];
-        [self presentViewController:alert animated:YES completion:nil];
+        [FLEXAlert makeAlert:^(FLEXAlert *make) {
+            make.title(@"不支持的文件类型");
+            make.message([NSString stringWithFormat:@"无法分析文件类型: %@", extension]);
+            make.button(@"确定").handler(^(NSArray<NSString *> *strings) {
+                // 空的 handler 实现
+            });
+        } showFrom:self];
     }
 }
 

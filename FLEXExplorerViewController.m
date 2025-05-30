@@ -422,15 +422,14 @@ typedef NS_ENUM(NSUInteger, FLEXExplorerMode) {
 
 // 添加Bug按钮点击处理方法
 - (void)bugButtonTapped:(FLEXExplorerToolbarItem *)sender {
-    [self toggleBugTool];
-}
-
-// 添加toggleBugTool方法
-- (void)toggleBugTool {
-    self.currentMode = FLEXExplorerModeDefault;
-    [self toggleToolWithViewControllerProvider:^UINavigationController *{
-        return [FLEXNavigationController withRootViewController:[FLEXBugViewController new]];
-    } completion:nil];
+    // 创建Bug工具界面并展示
+    FLEXBugViewController *bugViewController = [[FLEXBugViewController alloc] init];
+    UINavigationController *navController = [[UINavigationController alloc] initWithRootViewController:bugViewController];
+    
+    // 设置模态展示样式
+    navController.modalPresentationStyle = UIModalPresentationFormSheet;
+    
+    [self presentViewController:navController animated:YES completion:nil];
 }
 
 - (void)selectButtonTapped:(FLEXExplorerToolbarItem *)sender {

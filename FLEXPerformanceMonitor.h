@@ -114,7 +114,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)stopMethodProfiling;
 
 /**
- * 获取方法性能分析结果
+ * 获取分析结果
  */
 - (NSArray *)getProfilingResults;
 

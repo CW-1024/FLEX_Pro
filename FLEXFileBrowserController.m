@@ -7,6 +7,7 @@
 //
 
 #import "FLEXFileBrowserController.h"
+#import "FLEXFileBrowserController+RuntimeBrowser.h"
 #import "FLEXUtility.h"
 #import "FLEXWebViewController.h"
 #import "FLEXActivityViewController.h"
@@ -269,11 +270,15 @@ typedef NS_ENUM(NSUInteger, FLEXFileBrowserSortAttribute) {
 }
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+    [tableView deselectRowAtIndexPath:indexPath animated:YES];
+    
     NSString *subpath = [self filePathAtIndexPath:indexPath];
-    NSString *fullPath = subpath;
+    NSString *fullPath = [self.path stringByAppendingPathComponent:subpath];
+    
+    NSFileManager *fileManager = [NSFileManager defaultManager];
     BOOL isDirectory = NO;
-    BOOL exists = [NSFileManager.defaultManager fileExistsAtPath:fullPath isDirectory:&isDirectory];
-
+    BOOL exists = [fileManager fileExistsAtPath:fullPath isDirectory:&isDirectory];
+    
     if (!exists) {
         // 处理无效路径
         return;
@@ -286,9 +291,12 @@ typedef NS_ENUM(NSUInteger, FLEXFileBrowserSortAttribute) {
     } else {
         NSString *extension = [subpath.pathExtension lowercaseString];
         
-        // 添加对 dylib 和 framework 文件的支持
-        if ([extension isEqualToString:@"dylib"] || [extension isEqualToString:@"framework"]) {
-            [self analyzeMachOFile:fullPath];
+        // ✅ 使用分类方法分析特殊文件类型
+        if ([extension isEqualToString:@"dylib"] || 
+            [extension isEqualToString:@"framework"] ||
+            [extension isEqualToString:@"plist"] ||
+            [@[@"txt", @"log", @"json", @"xml", @"h", @"m", @"mm", @"c", @"cpp"] containsObject:extension]) {
+            [self analyzeFileAtPath:fullPath];  // ✅ 使用分类中的统一分析方法
             return;
         }
         
@@ -303,39 +311,10 @@ typedef NS_ENUM(NSUInteger, FLEXFileBrowserSortAttribute) {
     }
 }
 
+// 如果原来有 analyzeMachOFile: 方法，可以删除或重构为调用分类方法
 - (void)analyzeMachOFile:(NSString *)path {
-    const char *imagePath = path.UTF8String;
-    void *handle = dlopen(imagePath, RTLD_LAZY | RTLD_NOLOAD);
-    
-    NSMutableArray *classNames = [NSMutableArray array];
-    
-    if (handle) {
-        unsigned int count = 0;
-        const char **classNamesC = objc_copyClassNamesForImage(imagePath, &count);
-        
-        for (unsigned int i = 0; i < count; i++) {
-            NSString *className = @(classNamesC[i]);
-            [classNames addObject:className];
-        }
-        
-        free(classNamesC);
-        dlclose(handle);
-        
-        // 创建增强的类浏览器
-        FLEXMachOClassBrowserViewController *tableVC = [[FLEXMachOClassBrowserViewController alloc] init];
-        tableVC.title = [NSString stringWithFormat:@"%@ 类", [path lastPathComponent]];
-        tableVC.classNames = [classNames sortedArrayUsingSelector:@selector(compare:)];
-        tableVC.imagePath = path;
-        [self.navigationController pushViewController:tableVC animated:YES];
-    } else {
-        UIAlertController *alert = [UIAlertController
-                                   alertControllerWithTitle:@"无法加载"
-                                   message:@"无法加载动态库或framework"
-                                   preferredStyle:UIAlertControllerStyleAlert];
-        
-        [alert addAction:[UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDefault handler:nil]];
-        [self presentViewController:alert animated:YES completion:nil];
-    }
+    // ✅ 重构：调用分类方法
+    [self analyzeRuntimeMachOFile:path];
 }
 
 - (BOOL)tableView:(UITableView *)tableView shouldShowMenuForRowAtIndexPath:(NSIndexPath *)indexPath {

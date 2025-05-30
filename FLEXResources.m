@@ -8713,10 +8713,15 @@ static const u_int8_t FLEXHierarchyIndentPattern3x[] = {
         return [UIImage systemImageNamed:@"ant.circle"];
     }
     
+    // iOS 13以下版本使用内置图标资源
     static UIImage *bugIcon = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        bugIcon = [UIImage imageNamed:@"flex_bug"] ?: [self globalsIcon];
+        // 尝试使用App内的图标资源，优先级从高到低
+        bugIcon = [UIImage imageNamed:@"bug_icon"] ?:       // 使用更专业的图标
+                 [UIImage imageNamed:@"icon_bug"] ?:        // 备选图标
+                 [UIImage imageNamed:@"flex_bug"] ?:        // 原有图标
+                 [self globalsIcon];                        // 最后的备选
     });
     
     return bugIcon;
