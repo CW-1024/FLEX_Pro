@@ -42,4 +42,4 @@ jobs:
         uses: actions/upload-artifact@v4.6.0
         with:
           name: FLEX_Pro
-          path: ${{ github.workspace }}/packages/*.deb
+          path: /Users/runner/work/FLEX_Pro/FLEX_Pro/*.deb
